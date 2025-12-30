@@ -1,0 +1,15 @@
+# 便携版 Node.js (用户通过 installer.js 下载)
+node/
+
+# 下载的压缩包
+*.tar.gz
+*.zip
+
+# 生成的注册表文件
+*.reg
+
+# macOS
+.DS_Store
+
+# 用户配置（包含API Key，不要提交）
+# config.json
