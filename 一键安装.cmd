@@ -1,0 +1,238 @@
+@echo off
+chcp 65001 >nul
+title Claude Code 一键安装器
+
+echo.
+echo ============================================================
+echo        Claude Code 一键安装器 (国内镜像加速)
+echo ============================================================
+echo   本工具将自动完成以下操作:
+echo     1. 设置 PowerShell 执行策略
+echo     2. 安装 Node.js (使用淘宝镜像)
+echo     3. 配置 npm 使用国内镜像 (永久生效)
+echo     4. 安装 Claude Code
+echo     5. 配置 API Key (图形界面)
+echo ============================================================
+echo.
+
+set /p confirm="是否开始安装？(Y/N, 默认 Y): "
+if /i "%confirm%"=="N" (
+    echo 已取消
+    pause
+    exit /b 0
+)
+
+:: ============================================================
+:: 步骤 1: 设置 PowerShell 执行策略
+:: ============================================================
+echo.
+echo ============================================================
+echo [步骤 1/5] 设置 PowerShell 执行策略
+echo ============================================================
+
+powershell -NoProfile -Command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser -Force" 2>nul
+if %ERRORLEVEL% EQU 0 (
+    echo [OK] PowerShell 执行策略已设置
+) else (
+    echo [警告] 设置执行策略失败，可能需要管理员权限
+)
+
+:: ============================================================
+:: 步骤 2: 安装 Node.js
+:: ============================================================
+echo.
+echo ============================================================
+echo [步骤 2/5] 检测/安装 Node.js
+echo ============================================================
+
+where node >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    echo [检测] 已安装 Node.js:
+    node --version
+    echo [跳过] 无需重复安装
+    goto :npm_mirror
+)
+
+echo [检测] 未安装 Node.js，开始下载...
+
+:: 设置变量
+set "NODE_VERSION=22.12.0"
+set "ARCH=x64"
+if "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "ARCH=arm64"
+
+set "FILENAME=node-v%NODE_VERSION%-%ARCH%.msi"
+set "MIRROR_URL=https://npmmirror.com/mirrors/node/v%NODE_VERSION%/%FILENAME%"
+set "BACKUP_URL=https://mirrors.tuna.tsinghua.edu.cn/nodejs-release/v%NODE_VERSION%/%FILENAME%"
+set "DOWNLOAD_PATH=%TEMP%\%FILENAME%"
+
+echo [下载] 从淘宝镜像下载 Node.js v%NODE_VERSION%...
+echo [下载] URL: %MIRROR_URL%
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$ProgressPreference = 'Continue'; " ^
+  "try { " ^
+  "  Write-Host '正在下载，请稍候...' -ForegroundColor Cyan; " ^
+  "  Invoke-WebRequest -Uri '%MIRROR_URL%' -OutFile '%DOWNLOAD_PATH%' -UseBasicParsing; " ^
+  "  Write-Host '下载完成！' -ForegroundColor Green; " ^
+  "} catch { " ^
+  "  Write-Host '淘宝镜像失败，尝试清华源...' -ForegroundColor Yellow; " ^
+  "  try { " ^
+  "    Invoke-WebRequest -Uri '%BACKUP_URL%' -OutFile '%DOWNLOAD_PATH%' -UseBasicParsing; " ^
+  "    Write-Host '下载完成！' -ForegroundColor Green; " ^
+  "  } catch { " ^
+  "    Write-Host '下载失败: ' + $_.Exception.Message -ForegroundColor Red; " ^
+  "    exit 1; " ^
+  "  } " ^
+  "}"
+
+if errorlevel 1 (
+    echo [错误] Node.js 下载失败
+    echo 请手动下载: %MIRROR_URL%
+    pause
+    exit /b 1
+)
+
+if not exist "%DOWNLOAD_PATH%" (
+    echo [错误] 下载文件不存在
+    pause
+    exit /b 1
+)
+
+echo [安装] 正在安装 Node.js...
+msiexec /i "%DOWNLOAD_PATH%" /qb
+
+if errorlevel 1 (
+    echo [错误] Node.js 安装失败
+    pause
+    exit /b 1
+)
+
+del "%DOWNLOAD_PATH%" 2>nul
+echo [OK] Node.js 安装完成
+
+:: 刷新环境变量
+set "PATH=%PATH%;C:\Program Files\nodejs"
+
+:: ============================================================
+:: 步骤 3: 配置 npm 镜像（永久生效）
+:: ============================================================
+:npm_mirror
+echo.
+echo ============================================================
+echo [步骤 3/5] 配置 npm 使用国内镜像 (永久生效)
+echo ============================================================
+
+:: 设置 npm 配置
+call npm config set registry https://registry.npmmirror.com
+
+:: 同时设置系统环境变量，确保所有场景都能使用
+setx npm_config_registry "https://registry.npmmirror.com" >nul 2>&1
+
+echo [OK] npm 镜像配置完成
+echo [当前] registry: https://registry.npmmirror.com
+echo [提示] 已添加到系统环境变量，永久生效
+
+:: ============================================================
+:: 步骤 4: 安装 Claude Code
+:: ============================================================
+echo.
+echo ============================================================
+echo [步骤 4/5] 安装 Claude Code
+echo ============================================================
+
+echo [安装] @anthropic-ai/claude-code ...
+call npm install -g @anthropic-ai/claude-code
+
+if errorlevel 1 (
+    echo [错误] Claude Code 安装失败
+    pause
+    exit /b 1
+)
+echo [OK] Claude Code 安装完成
+
+:: ============================================================
+:: 步骤 5: 配置 API Key（图形界面）
+:: ============================================================
+echo.
+echo ============================================================
+echo [步骤 5/5] 配置 API Key
+echo ============================================================
+
+echo [提示] 即将弹出输入框，请输入你的 API Key
+echo [提示] API Key 从 open.bigmodel.cn 获取
+
+:: 使用 PowerShell 弹出图形界面输入框
+for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "Add-Type -AssemblyName Microsoft.VisualBasic; " ^
+  "$key = [Microsoft.VisualBasic.Interaction]::InputBox('请输入你的 API Key`n`n从 open.bigmodel.cn 获取`n格式: xxxxxxxx.xxxxxxxx', 'Claude Code - API Key 配置', ''); " ^
+  "Write-Output $key"') do set "API_KEY=%%i"
+
+if "%API_KEY%"=="" (
+    echo [跳过] 未输入 API Key
+    echo [提示] 稍后可手动设置环境变量 ANTHROPIC_AUTH_TOKEN
+    goto :done
+)
+
+:: 设置用户环境变量（永久）
+echo [设置] 正在配置环境变量...
+setx ANTHROPIC_AUTH_TOKEN "%API_KEY%" >nul
+setx ANTHROPIC_BASE_URL "https://open.bigmodel.cn/api/anthropic" >nul
+
+:: 同时设置当前会话的环境变量（立即生效）
+set "ANTHROPIC_AUTH_TOKEN=%API_KEY%"
+set "ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic"
+
+echo [OK] API Key 配置完成
+
+:: ============================================================
+:: 完成 - 启动 Claude Code
+:: ============================================================
+echo.
+echo ============================================================
+echo                     安装完成!
+echo ============================================================
+echo.
+echo   安装 Skills (可选，在 Claude Code 中运行):
+echo     /plugin marketplace add anthropics/skills
+echo     /plugin install document-skills@anthropic-agent-skills
+echo.
+echo   Skills 安装位置:
+echo     %USERPROFILE%\.claude\plugins\marketplaces\anthropic-agent-skills\skills\
+echo.
+echo ============================================================
+echo.
+echo [启动] 正在启动 Claude Code...
+echo.
+
+:: 启动 Claude Code
+call npx @anthropic-ai/claude-code
+
+pause
+exit /b 0
+
+:: ============================================================
+:: 未配置 API Key 的情况
+:: ============================================================
+:done
+echo.
+echo ============================================================
+echo                     安装完成!
+echo ============================================================
+echo.
+echo   [注意] 未配置 API Key，需要手动设置:
+echo     setx ANTHROPIC_AUTH_TOKEN "你的API_KEY"
+echo     setx ANTHROPIC_BASE_URL "https://open.bigmodel.cn/api/anthropic"
+echo.
+echo   然后重新打开终端，运行:
+echo     npx @anthropic-ai/claude-code
+echo.
+echo   安装 Skills (可选，在 Claude Code 中运行):
+echo     /plugin marketplace add anthropics/skills
+echo     /plugin install document-skills@anthropic-agent-skills
+echo.
+echo   Skills 安装位置:
+echo     %USERPROFILE%\.claude\plugins\marketplaces\anthropic-agent-skills\skills\
+echo.
+echo ============================================================
+
+pause
