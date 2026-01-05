@@ -206,7 +206,7 @@ for /f "usebackq tokens=1,2 delims=|" %%a in (`powershell -NoProfile -ExecutionP
   "$form.FormBorderStyle = 'FixedDialog'; " ^
   "$form.MaximizeBox = $false; " ^
   "$label1 = New-Object System.Windows.Forms.Label; " ^
-  "$label1.Text = 'API Base URL (默认使用智谱 AI 代理):'; " ^
+  "$label1.Text = 'API Base URL (API 代理地址，与 API Key 对应):'; " ^
   "$label1.Location = New-Object System.Drawing.Point(20, 20); " ^
   "$label1.Size = New-Object System.Drawing.Size(450, 20); " ^
   "$textBox1 = New-Object System.Windows.Forms.TextBox; " ^
@@ -214,7 +214,7 @@ for /f "usebackq tokens=1,2 delims=|" %%a in (`powershell -NoProfile -ExecutionP
   "$textBox1.Size = New-Object System.Drawing.Size(440, 25); " ^
   "$textBox1.Text = 'https://open.bigmodel.cn/api/anthropic'; " ^
   "$label2 = New-Object System.Windows.Forms.Label; " ^
-  "$label2.Text = 'API Key (从 open.bigmodel.cn 获取):'; " ^
+  "$label2.Text = 'API Key (需与上方 Base URL 对应):'; " ^
   "$label2.Location = New-Object System.Drawing.Point(20, 85); " ^
   "$label2.Size = New-Object System.Drawing.Size(450, 20); " ^
   "$textBox2 = New-Object System.Windows.Forms.TextBox; " ^
@@ -222,9 +222,9 @@ for /f "usebackq tokens=1,2 delims=|" %%a in (`powershell -NoProfile -ExecutionP
   "$textBox2.Size = New-Object System.Drawing.Size(440, 25); " ^
   "$textBox2.Text = ''; " ^
   "$label3 = New-Object System.Windows.Forms.Label; " ^
-  "$label3.Text = '提示: API Key 格式为 xxxxxxxx.xxxxxxxx'; " ^
+  "$label3.Text = '智谱AI用户: 购买 coding plan 后在 open.bigmodel.cn 获取 API Key'; " ^
   "$label3.Location = New-Object System.Drawing.Point(20, 140); " ^
-  "$label3.Size = New-Object System.Drawing.Size(450, 20); " ^
+  "$label3.Size = New-Object System.Drawing.Size(460, 20); " ^
   "$label3.ForeColor = [System.Drawing.Color]::Gray; " ^
   "$okButton = New-Object System.Windows.Forms.Button; " ^
   "$okButton.Location = New-Object System.Drawing.Point(280, 180); " ^
@@ -287,16 +287,19 @@ echo ============================================================
 echo                     安装完成!
 echo ============================================================
 echo.
-echo   安装 Skills (可选，在 Claude Code 中运行):
+echo   [提示] 即将启动 Claude Code
+echo   启动后可在 Claude Code 中安装 Skills (可选):
+echo.
+echo     输入以下命令安装文档处理能力:
 echo     /plugin marketplace add anthropics/skills
 echo     /plugin install document-skills@anthropic-agent-skills
 echo.
-echo   Skills 安装位置:
-echo     %USERPROFILE%\.claude\plugins\marketplaces\anthropic-agent-skills\skills\
+echo     安装完成后重启 Claude Code 即可使用
 echo.
 echo ============================================================
 echo.
 echo [启动] 正在启动 Claude Code...
+echo   (配置已生效，可以直接使用)
 echo.
 
 :: 启动 Claude Code

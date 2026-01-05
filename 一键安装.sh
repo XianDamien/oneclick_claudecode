@@ -168,13 +168,13 @@ fi
 # 如果不使用默认配置，弹出GUI
 if [ "$USE_DEFAULT" != "Y" ] && [ "$USE_DEFAULT" != "y" ]; then
   echo "[提示] 即将弹出配置窗口（共2步）"
-  echo "[提示] 第1步：配置 API Base URL"
-  echo "[提示] 第2步：配置 API Key（从 open.bigmodel.cn 获取）"
+  echo "[提示] 第1步：配置 API Base URL（API 代理地址）"
+  echo "[提示] 第2步：配置 API Key（与 Base URL 对应）"
 
   # 使用 AppleScript 弹出图形界面输入框（第1步：配置 Base URL）
   BASE_URL=$(osascript -e 'tell app "System Events" to display dialog "【第 1 步 / 共 2 步】配置 API Base URL
 
-请输入 API 代理地址（默认使用智谱 AI 代理）:
+请输入 API 代理地址（与 API Key 对应）:
 
 • 智谱 AI: https://open.bigmodel.cn/api/anthropic
 • 其他代理: 根据你的服务商填写
@@ -188,9 +188,10 @@ if [ "$USE_DEFAULT" != "Y" ] && [ "$USE_DEFAULT" != "y" ]; then
   # 使用 AppleScript 弹出图形界面输入框（第2步：配置 API Key）
   API_KEY=$(osascript -e 'tell app "System Events" to display dialog "【第 2 步 / 共 2 步】配置 API Key
 
-请输入你的 API Key:
+请输入你的 API Key（需与 Base URL 对应）:
 
-• 获取地址: open.bigmodel.cn
+• 智谱AI用户: 购买 coding plan 后
+  在 open.bigmodel.cn 获取 API Key
 • 格式示例: xxxxxxxx.xxxxxxxx
 
 留空则跳过配置" default answer "" with title "Claude Code - API 配置 (2/2)" with icon note buttons {"取消", "完成"} default button "完成"' -e 'text returned of result' 2>/dev/null)
@@ -236,21 +237,25 @@ if [ -n "$API_KEY" ]; then
 fi
 
 # ============================================================
-# 完成
+# 完成 - 启动 Claude Code
 # ============================================================
 echo ""
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║                    安装完成！                              ║"
 echo "╠════════════════════════════════════════════════════════════╣"
-echo "║  请关闭此终端，重新打开                                   ║"
+echo "║  [提示] 即将启动 Claude Code                              ║"
+echo "║  启动后可在 Claude Code 中安装 Skills (可选):             ║"
 echo "║                                                            ║"
-echo "║  运行以下命令启动 Claude Code:                            ║"
-echo "║    npx @anthropic-ai/claude-code                          ║"
+echo "║  输入以下命令安装文档处理能力:                            ║"
+echo "║    /plugin marketplace add anthropics/skills              ║"
+echo "║    /plugin install document-skills@anthropic-agent-skills ║"
 echo "║                                                            ║"
-echo "║  安装 Skills (可选):                                      ║"
-echo "║    npm install -g @anthropic-ai/claude-code-skill-pdf     ║"
-echo "║    npm install -g @anthropic-ai/claude-code-skill-xlsx    ║"
-echo "║    npm install -g @anthropic-ai/claude-code-skill-pptx    ║"
-echo "║    npm install -g @anthropic-ai/claude-code-skill-docx    ║"
+echo "║  安装完成后重启 Claude Code 即可使用                      ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
+echo "[启动] 正在启动 Claude Code..."
+echo "  (配置已生效，可以直接使用)"
+echo ""
+
+# 启动 Claude Code
+npx @anthropic-ai/claude-code
