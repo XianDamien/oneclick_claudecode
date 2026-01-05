@@ -90,14 +90,37 @@ install_global.cmd
 
 Skills 可以让 Claude 处理 PDF、Excel、PowerPoint、Word 等文件。
 
-在 Claude Code 中运行以下命令：
+### 方法一：使用命令行（推荐）
 
-```
+在 Claude Code 中依次运行以下命令：
+
+```bash
+# 1. 注册 Skills marketplace
 /plugin marketplace add anthropics/skills
+
+# 2. 安装文档处理 Skills
 /plugin install document-skills@anthropic-agent-skills
 ```
 
-安装完成后重启 Claude Code 即可使用。
+### 方法二：使用图形界面
+
+在 Claude Code 中：
+1. 先运行 `/plugin marketplace add anthropics/skills` 注册 marketplace
+2. 选择 **Browse and install plugins**
+3. 选择 **anthropic-agent-skills**
+4. 选择 **document-skills** 或 **example-skills**
+5. 点击 **Install now**
+
+### 使用 Skills
+
+安装完成后，直接在对话中提及 skill 名称即可使用：
+
+```
+"使用 pdf skill 提取这个文件的内容"
+"Use the PDF skill to extract form fields from report.pdf"
+```
+
+无需重启 Claude Code。
 
 ### Skills 文件位置
 
@@ -131,16 +154,6 @@ C:\Users\你的用户名\.claude\plugins\marketplaces\anthropic-agent-skills\ski
 | `frontend-design` | 前端设计 |
 | `theme-factory` | 主题工厂（配色方案生成） |
 | 更多... | 查看 Skills 目录了解全部 |
-
-### 使用示例
-
-```
-"使用 pdf skill 提取这个文件的内容"
-"使用 xlsx skill 创建一个销售报表"
-"使用 pptx skill 制作一个项目汇报 PPT"
-"使用 docx skill 写一份工作总结"
-"使用 skill-creator 帮我创建一个自定义 skill"
-```
 
 ## API 配置
 

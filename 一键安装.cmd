@@ -288,13 +288,16 @@ echo                     安装完成!
 echo ============================================================
 echo.
 echo   [提示] 即将启动 Claude Code
-echo   启动后可在 Claude Code 中安装 Skills (可选):
+echo   启动后可安装 Skills 获得文档处理能力 (可选):
 echo.
-echo     输入以下命令安装文档处理能力:
-echo     /plugin marketplace add anthropics/skills
-echo     /plugin install document-skills@anthropic-agent-skills
+echo     1. 注册 marketplace:
+echo        /plugin marketplace add anthropics/skills
 echo.
-echo     安装完成后重启 Claude Code 即可使用
+echo     2. 安装文档处理 Skills:
+echo        /plugin install document-skills@anthropic-agent-skills
+echo.
+echo     3. 使用 Skills (无需重启):
+echo        "使用 pdf skill 提取文件内容"
 echo.
 echo ============================================================
 echo.
