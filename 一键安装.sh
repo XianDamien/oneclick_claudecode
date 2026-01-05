@@ -167,24 +167,33 @@ fi
 
 # 如果不使用默认配置，弹出GUI
 if [ "$USE_DEFAULT" != "Y" ] && [ "$USE_DEFAULT" != "y" ]; then
-  echo "[提示] 即将弹出输入框，请配置 API 信息"
-  echo "[提示] API Key 从 open.bigmodel.cn 获取"
+  echo "[提示] 即将弹出配置窗口（共2步）"
+  echo "[提示] 第1步：配置 API Base URL"
+  echo "[提示] 第2步：配置 API Key（从 open.bigmodel.cn 获取）"
 
-  # 使用 AppleScript 弹出图形界面输入框（配置 Base URL）
-  BASE_URL=$(osascript -e 'tell app "System Events" to display dialog "请输入 API Base URL
+  # 使用 AppleScript 弹出图形界面输入框（第1步：配置 Base URL）
+  BASE_URL=$(osascript -e 'tell app "System Events" to display dialog "【第 1 步 / 共 2 步】配置 API Base URL
 
-默认: https://open.bigmodel.cn/api/anthropic
-支持智谱AI等国内代理" default answer "https://open.bigmodel.cn/api/anthropic" with title "Claude Code - Base URL 配置" with icon note buttons {"取消", "确定"} default button "确定"' -e 'text returned of result' 2>/dev/null)
+请输入 API 代理地址（默认使用智谱 AI 代理）:
+
+• 智谱 AI: https://open.bigmodel.cn/api/anthropic
+• 其他代理: 根据你的服务商填写
+
+留空则使用默认值" default answer "https://open.bigmodel.cn/api/anthropic" with title "Claude Code - API 配置 (1/2)" with icon note buttons {"取消", "继续"} default button "继续"' -e 'text returned of result' 2>/dev/null)
 
   if [ -z "$BASE_URL" ]; then
     BASE_URL="https://open.bigmodel.cn/api/anthropic"
   fi
 
-  # 使用 AppleScript 弹出图形界面输入框（配置 API Key）
-  API_KEY=$(osascript -e 'tell app "System Events" to display dialog "请输入你的 API Key
+  # 使用 AppleScript 弹出图形界面输入框（第2步：配置 API Key）
+  API_KEY=$(osascript -e 'tell app "System Events" to display dialog "【第 2 步 / 共 2 步】配置 API Key
 
-从 open.bigmodel.cn 获取
-格式: xxxxxxxx.xxxxxxxx" default answer "" with title "Claude Code - API Key 配置" with icon note buttons {"取消", "确定"} default button "确定"' -e 'text returned of result' 2>/dev/null)
+请输入你的 API Key:
+
+• 获取地址: open.bigmodel.cn
+• 格式示例: xxxxxxxx.xxxxxxxx
+
+留空则跳过配置" default answer "" with title "Claude Code - API 配置 (2/2)" with icon note buttons {"取消", "完成"} default button "完成"' -e 'text returned of result' 2>/dev/null)
 
   if [ -z "$API_KEY" ]; then
     echo "[跳过] 未输入 API Key"

@@ -193,22 +193,63 @@ if exist "%CONFIG_FILE%" (
 )
 
 :: 弹出GUI配置
-echo [提示] 即将弹出输入框，请配置 API 信息
-echo [提示] API Key 从 open.bigmodel.cn 获取
+echo [提示] 即将弹出配置窗口，请填写 API 信息
 
-:: 使用 PowerShell 弹出图形界面输入框（配置 Base URL）
-for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "Add-Type -AssemblyName Microsoft.VisualBasic; " ^
-  "$url = [Microsoft.VisualBasic.Interaction]::InputBox('请输入 API Base URL`n`n默认: https://open.bigmodel.cn/api/anthropic`n支持智谱AI等国内代理', 'Claude Code - Base URL 配置', 'https://open.bigmodel.cn/api/anthropic'); " ^
-  "Write-Output $url"') do set "BASE_URL=%%i"
+:: 使用 PowerShell 创建双输入框的 GUI 表单
+for /f "usebackq tokens=1,2 delims=|" %%a in (`powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "Add-Type -AssemblyName System.Windows.Forms; " ^
+  "Add-Type -AssemblyName System.Drawing; " ^
+  "$form = New-Object System.Windows.Forms.Form; " ^
+  "$form.Text = 'Claude Code - API 配置'; " ^
+  "$form.Size = New-Object System.Drawing.Size(500, 280); " ^
+  "$form.StartPosition = 'CenterScreen'; " ^
+  "$form.FormBorderStyle = 'FixedDialog'; " ^
+  "$form.MaximizeBox = $false; " ^
+  "$label1 = New-Object System.Windows.Forms.Label; " ^
+  "$label1.Text = 'API Base URL (默认使用智谱 AI 代理):'; " ^
+  "$label1.Location = New-Object System.Drawing.Point(20, 20); " ^
+  "$label1.Size = New-Object System.Drawing.Size(450, 20); " ^
+  "$textBox1 = New-Object System.Windows.Forms.TextBox; " ^
+  "$textBox1.Location = New-Object System.Drawing.Point(20, 45); " ^
+  "$textBox1.Size = New-Object System.Drawing.Size(440, 25); " ^
+  "$textBox1.Text = 'https://open.bigmodel.cn/api/anthropic'; " ^
+  "$label2 = New-Object System.Windows.Forms.Label; " ^
+  "$label2.Text = 'API Key (从 open.bigmodel.cn 获取):'; " ^
+  "$label2.Location = New-Object System.Drawing.Point(20, 85); " ^
+  "$label2.Size = New-Object System.Drawing.Size(450, 20); " ^
+  "$textBox2 = New-Object System.Windows.Forms.TextBox; " ^
+  "$textBox2.Location = New-Object System.Drawing.Point(20, 110); " ^
+  "$textBox2.Size = New-Object System.Drawing.Size(440, 25); " ^
+  "$textBox2.Text = ''; " ^
+  "$label3 = New-Object System.Windows.Forms.Label; " ^
+  "$label3.Text = '提示: API Key 格式为 xxxxxxxx.xxxxxxxx'; " ^
+  "$label3.Location = New-Object System.Drawing.Point(20, 140); " ^
+  "$label3.Size = New-Object System.Drawing.Size(450, 20); " ^
+  "$label3.ForeColor = [System.Drawing.Color]::Gray; " ^
+  "$okButton = New-Object System.Windows.Forms.Button; " ^
+  "$okButton.Location = New-Object System.Drawing.Point(280, 180); " ^
+  "$okButton.Size = New-Object System.Drawing.Size(80, 30); " ^
+  "$okButton.Text = '确定'; " ^
+  "$okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK; " ^
+  "$cancelButton = New-Object System.Windows.Forms.Button; " ^
+  "$cancelButton.Location = New-Object System.Drawing.Point(380, 180); " ^
+  "$cancelButton.Size = New-Object System.Drawing.Size(80, 30); " ^
+  "$cancelButton.Text = '取消'; " ^
+  "$cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel; " ^
+  "$form.Controls.AddRange(@($label1, $textBox1, $label2, $textBox2, $label3, $okButton, $cancelButton)); " ^
+  "$form.AcceptButton = $okButton; " ^
+  "$form.CancelButton = $cancelButton; " ^
+  "$result = $form.ShowDialog(); " ^
+  "if ($result -eq [System.Windows.Forms.DialogResult]::OK) { " ^
+  "  Write-Output ($textBox1.Text + '|' + $textBox2.Text); " ^
+  "} else { " ^
+  "  Write-Output '|'; " ^
+  "}"`) do (
+    set "BASE_URL=%%a"
+    set "API_KEY=%%b"
+)
 
 if "%BASE_URL%"=="" set "BASE_URL=https://open.bigmodel.cn/api/anthropic"
-
-:: 使用 PowerShell 弹出图形界面输入框（配置 API Key）
-for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "Add-Type -AssemblyName Microsoft.VisualBasic; " ^
-  "$key = [Microsoft.VisualBasic.Interaction]::InputBox('请输入你的 API Key`n`n从 open.bigmodel.cn 获取`n格式: xxxxxxxx.xxxxxxxx', 'Claude Code - API Key 配置', ''); " ^
-  "Write-Output $key"') do set "API_KEY=%%i"
 
 if "%API_KEY%"=="" (
     echo [跳过] 未输入 API Key
