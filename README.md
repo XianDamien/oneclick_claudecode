@@ -7,10 +7,11 @@
 
 ## 特性
 
-- **一键安装**：自动安装 Node.js + npm 镜像 + Claude Code + API Key 配置
+- **一键安装**：自动安装 Node.js + npm 镜像 + Claude Code + API 配置
 - **跨平台支持**：同时支持 Windows 和 macOS
 - **国内镜像加速**：使用淘宝/清华镜像，下载速度快，无需翻墙
-- **图形界面配置**：API Key 通过 GUI 输入框配置，简单易用
+- **图形界面配置**：Base URL + API Key 通过 GUI 输入框配置，简单易用
+- **配置保存复用**：配置自动保存，下次安装可直接使用，无需重复输入
 - **永久镜像配置**：npm 镜像自动添加到系统环境变量，永久生效
 
 ## 快速开始
@@ -32,7 +33,10 @@ chmod +x 一键安装.sh
 1. 安装 Node.js（从淘宝镜像下载）
 2. 配置 npm 使用国内镜像（永久生效）
 3. 安装 Claude Code
-4. 弹出图形界面配置 API Key
+4. 配置 API（支持保存和复用）：
+   - 如有已保存的配置，询问是否使用
+   - 否则弹出 GUI 配置 Base URL + API Key
+   - 配置自动保存到 `~/.claude-installer/config.json`
 
 ### 安装完成后
 
@@ -138,12 +142,37 @@ C:\Users\你的用户名\.claude\plugins\marketplaces\anthropic-agent-skills\ski
 "使用 skill-creator 帮我创建一个自定义 skill"
 ```
 
-## API Key 配置
+## API 配置
+
+### 首次安装
 
 本项目默认使用智谱 AI (Bigmodel) 的 API 接口。
 
 1. 前往 [智谱 AI 控制台](https://open.bigmodel.cn/usercenter/proj-mgmt/apikeys) 获取 API Key
-2. 在安装过程中的图形界面输入框中填入 API Key
+2. 运行一键安装脚本时，会弹出图形界面配置：
+   - **Base URL**：API 代理地址（默认：`https://open.bigmodel.cn/api/anthropic`）
+   - **API Key**：你的 API Key
+
+### 配置保存与复用
+
+配置会自动保存到：
+- **Windows**: `%USERPROFILE%\.claude-installer\config.json`
+- **macOS**: `~/.claude-installer/config.json`
+
+下次安装时，会自动检测已保存的配置并询问：
+```
+[检测] 发现已保存的配置
+
+[已保存] Base URL: https://open.bigmodel.cn/api/anthropic
+[已保存] API Key: 7ad8752337db4913961...
+
+是否使用已保存的配置？(Y/N, 默认 Y):
+```
+
+- 输入 `Y` 或直接回车：使用已保存的配置
+- 输入 `N`：重新弹出 GUI 配置新的参数
+
+### 手动配置
 
 如果错过了配置界面，可以手动设置环境变量：
 

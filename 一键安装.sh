@@ -123,37 +123,107 @@ echo "============================================================"
 echo "[步骤 4/4] 配置 API Key"
 echo "============================================================"
 
-echo "[提示] 即将弹出输入框，请输入你的 API Key"
-echo "[提示] API Key 从 open.bigmodel.cn 获取"
+# 配置文件路径
+CONFIG_DIR="$HOME/.claude-installer"
+CONFIG_FILE="$CONFIG_DIR/config.json"
 
-# 使用 AppleScript 弹出图形界面输入框
-API_KEY=$(osascript -e 'tell app "System Events" to display dialog "请输入你的 API Key
+# Shell 配置文件
+SHELL_RC="$HOME/.zshrc"
+if [ ! -f "$SHELL_RC" ]; then
+  SHELL_RC="$HOME/.bash_profile"
+fi
+
+# 检查是否存在配置文件
+USE_DEFAULT="N"
+if [ -f "$CONFIG_FILE" ]; then
+  echo "[检测] 发现已保存的配置"
+  echo ""
+
+  # 读取配置文件
+  if command -v python3 &> /dev/null; then
+    SAVED_API_KEY=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['apiKey'])" 2>/dev/null)
+    SAVED_BASE_URL=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['baseUrl'])" 2>/dev/null)
+  else
+    # 使用 grep 和 sed 简单解析（备用方案）
+    SAVED_API_KEY=$(grep '"apiKey"' "$CONFIG_FILE" | sed 's/.*"apiKey"[^"]*"\([^"]*\)".*/\1/')
+    SAVED_BASE_URL=$(grep '"baseUrl"' "$CONFIG_FILE" | sed 's/.*"baseUrl"[^"]*"\([^"]*\)".*/\1/')
+  fi
+
+  echo "[已保存] Base URL: $SAVED_BASE_URL"
+  echo "[已保存] API Key: ${SAVED_API_KEY:0:20}..."
+  echo ""
+
+  read -p "是否使用已保存的配置？(Y/N, 默认 Y): " USE_DEFAULT
+  USE_DEFAULT=${USE_DEFAULT:-Y}
+
+  if [ "$USE_DEFAULT" = "Y" ] || [ "$USE_DEFAULT" = "y" ]; then
+    API_KEY="$SAVED_API_KEY"
+    BASE_URL="$SAVED_BASE_URL"
+    echo "[使用] 已保存的配置"
+  else
+    USE_DEFAULT="N"
+  fi
+fi
+
+# 如果不使用默认配置，弹出GUI
+if [ "$USE_DEFAULT" != "Y" ] && [ "$USE_DEFAULT" != "y" ]; then
+  echo "[提示] 即将弹出输入框，请配置 API 信息"
+  echo "[提示] API Key 从 open.bigmodel.cn 获取"
+
+  # 使用 AppleScript 弹出图形界面输入框（配置 Base URL）
+  BASE_URL=$(osascript -e 'tell app "System Events" to display dialog "请输入 API Base URL
+
+默认: https://open.bigmodel.cn/api/anthropic
+支持智谱AI等国内代理" default answer "https://open.bigmodel.cn/api/anthropic" with title "Claude Code - Base URL 配置" with icon note buttons {"取消", "确定"} default button "确定"' -e 'text returned of result' 2>/dev/null)
+
+  if [ -z "$BASE_URL" ]; then
+    BASE_URL="https://open.bigmodel.cn/api/anthropic"
+  fi
+
+  # 使用 AppleScript 弹出图形界面输入框（配置 API Key）
+  API_KEY=$(osascript -e 'tell app "System Events" to display dialog "请输入你的 API Key
 
 从 open.bigmodel.cn 获取
 格式: xxxxxxxx.xxxxxxxx" default answer "" with title "Claude Code - API Key 配置" with icon note buttons {"取消", "确定"} default button "确定"' -e 'text returned of result' 2>/dev/null)
 
-if [ -z "$API_KEY" ]; then
-  echo "[跳过] 未输入 API Key"
-  echo "[提示] 稍后可手动设置环境变量 ANTHROPIC_AUTH_TOKEN"
-else
+  if [ -z "$API_KEY" ]; then
+    echo "[跳过] 未输入 API Key"
+    echo "[提示] 稍后可手动设置环境变量 ANTHROPIC_AUTH_TOKEN"
+  else
+    # 保存配置到文件
+    echo "[保存] 正在保存配置到 $CONFIG_FILE..."
+    mkdir -p "$CONFIG_DIR"
+
+    cat > "$CONFIG_FILE" << EOF
+{
+  "apiKey": "$API_KEY",
+  "baseUrl": "$BASE_URL"
+}
+EOF
+    echo "[OK] 配置已保存，下次可直接使用"
+  fi
+fi
+
+# 设置环境变量
+if [ -n "$API_KEY" ]; then
   echo "[设置] 正在配置环境变量..."
 
   # 移除旧的配置（如果存在）
-  grep -v "ANTHROPIC_AUTH_TOKEN" "$SHELL_RC" > "$SHELL_RC.tmp" 2>/dev/null
-  grep -v "ANTHROPIC_BASE_URL" "$SHELL_RC.tmp" > "$SHELL_RC" 2>/dev/null
+  grep -v "ANTHROPIC_AUTH_TOKEN" "$SHELL_RC" > "$SHELL_RC.tmp" 2>/dev/null || true
+  grep -v "ANTHROPIC_BASE_URL" "$SHELL_RC.tmp" > "$SHELL_RC" 2>/dev/null || true
   rm -f "$SHELL_RC.tmp"
 
   # 添加新配置
   echo "" >> "$SHELL_RC"
   echo "# Claude Code API 配置" >> "$SHELL_RC"
   echo "export ANTHROPIC_AUTH_TOKEN=\"$API_KEY\"" >> "$SHELL_RC"
-  echo "export ANTHROPIC_BASE_URL=\"https://open.bigmodel.cn/api/anthropic\"" >> "$SHELL_RC"
+  echo "export ANTHROPIC_BASE_URL=\"$BASE_URL\"" >> "$SHELL_RC"
 
   # 立即生效
   export ANTHROPIC_AUTH_TOKEN="$API_KEY"
-  export ANTHROPIC_BASE_URL="https://open.bigmodel.cn/api/anthropic"
+  export ANTHROPIC_BASE_URL="$BASE_URL"
 
-  echo "[OK] API Key 配置完成"
+  echo "[OK] API 配置完成"
 fi
 
 # ============================================================

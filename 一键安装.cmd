@@ -158,10 +158,53 @@ echo ============================================================
 echo [步骤 5/5] 配置 API Key
 echo ============================================================
 
-echo [提示] 即将弹出输入框，请输入你的 API Key
+:: 配置文件路径
+set "CONFIG_DIR=%USERPROFILE%\.claude-installer"
+set "CONFIG_FILE=%CONFIG_DIR%\config.json"
+
+:: 检查是否存在配置文件
+set "USE_DEFAULT=N"
+if exist "%CONFIG_FILE%" (
+    echo [检测] 发现已保存的配置
+    echo.
+
+    :: 读取配置文件
+    for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+      "$config = Get-Content '%CONFIG_FILE%' | ConvertFrom-Json; " ^
+      "Write-Output $config.apiKey"') do set "SAVED_API_KEY=%%i"
+
+    for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+      "$config = Get-Content '%CONFIG_FILE%' | ConvertFrom-Json; " ^
+      "Write-Output $config.baseUrl"') do set "SAVED_BASE_URL=%%i"
+
+    echo [已保存] Base URL: %SAVED_BASE_URL%
+    echo [已保存] API Key: %SAVED_API_KEY:~0,20%...
+    echo.
+
+    set /p USE_DEFAULT="是否使用已保存的配置？(Y/N, 默认 Y): "
+    if /i "%USE_DEFAULT%"=="" set "USE_DEFAULT=Y"
+
+    if /i "%USE_DEFAULT%"=="Y" (
+        set "API_KEY=%SAVED_API_KEY%"
+        set "BASE_URL=%SAVED_BASE_URL%"
+        echo [使用] 已保存的配置
+        goto :save_env
+    )
+)
+
+:: 弹出GUI配置
+echo [提示] 即将弹出输入框，请配置 API 信息
 echo [提示] API Key 从 open.bigmodel.cn 获取
 
-:: 使用 PowerShell 弹出图形界面输入框
+:: 使用 PowerShell 弹出图形界面输入框（配置 Base URL）
+for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "Add-Type -AssemblyName Microsoft.VisualBasic; " ^
+  "$url = [Microsoft.VisualBasic.Interaction]::InputBox('请输入 API Base URL`n`n默认: https://open.bigmodel.cn/api/anthropic`n支持智谱AI等国内代理', 'Claude Code - Base URL 配置', 'https://open.bigmodel.cn/api/anthropic'); " ^
+  "Write-Output $url"') do set "BASE_URL=%%i"
+
+if "%BASE_URL%"=="" set "BASE_URL=https://open.bigmodel.cn/api/anthropic"
+
+:: 使用 PowerShell 弹出图形界面输入框（配置 API Key）
 for /f "delims=" %%i in ('powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "Add-Type -AssemblyName Microsoft.VisualBasic; " ^
   "$key = [Microsoft.VisualBasic.Interaction]::InputBox('请输入你的 API Key`n`n从 open.bigmodel.cn 获取`n格式: xxxxxxxx.xxxxxxxx', 'Claude Code - API Key 配置', ''); " ^
@@ -173,16 +216,27 @@ if "%API_KEY%"=="" (
     goto :done
 )
 
+:: 保存配置到文件
+echo [保存] 正在保存配置到 %CONFIG_FILE%...
+if not exist "%CONFIG_DIR%" mkdir "%CONFIG_DIR%"
+
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$config = @{apiKey='%API_KEY%'; baseUrl='%BASE_URL%'}; " ^
+  "$config | ConvertTo-Json | Set-Content '%CONFIG_FILE%' -Encoding UTF8"
+
+echo [OK] 配置已保存，下次可直接使用
+
+:save_env
 :: 设置用户环境变量（永久）
 echo [设置] 正在配置环境变量...
 setx ANTHROPIC_AUTH_TOKEN "%API_KEY%" >nul
-setx ANTHROPIC_BASE_URL "https://open.bigmodel.cn/api/anthropic" >nul
+setx ANTHROPIC_BASE_URL "%BASE_URL%" >nul
 
 :: 同时设置当前会话的环境变量（立即生效）
 set "ANTHROPIC_AUTH_TOKEN=%API_KEY%"
-set "ANTHROPIC_BASE_URL=https://open.bigmodel.cn/api/anthropic"
+set "ANTHROPIC_BASE_URL=%BASE_URL%"
 
-echo [OK] API Key 配置完成
+echo [OK] API 配置完成
 
 :: ============================================================
 :: 完成 - 启动 Claude Code
